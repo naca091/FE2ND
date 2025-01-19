@@ -38,6 +38,14 @@ const Homepage = () => {
     caloriesMin: "",
     caloriesMax: "",
   });
+ // Add debug logging
+ const logError = (error, context) => {
+  console.error(`Error in ${context}:`, error);
+  if (error.response) {
+    console.error('Response data:', error.response.data);
+    console.error('Response status:', error.response.status);
+  }
+};
 
   const categories = React.useMemo(() => {
     const uniqueCategories = new Set();
@@ -51,52 +59,47 @@ const Homepage = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        message.error("You are not logged in. Redirecting to login...");
+        navigate("/login");
+        return;
+      }
+
       try {
-        const response = await axios.get(`${API_URL}/auth/me`, {
-          headers: {
-            ...getAuthHeader(),
-            'Content-Type': 'application/json'
-          }
+        const response = await axios.get("https://demcalo.onrender.com/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+          'Content-Type': 'application/json'
         });
-  
         if (response.data.success) {
-          setUserData({
-            email: response.data.user.email,
-            xu: response.data.user.xu,
-            purchasedMenus: response.data.user.purchasedMenus?.map(menu => menu.menuId) || []
-          });
+          setUserEmail(response.data.user.email);
+          setUserXu(response.data.user.xu);
+          setPurchasedMenus(
+            response.data.user.purchasedMenus.map((menu) => menu.menuId)
+          );
+        } else {
+          message.error("Failed to fetch user data.");
+          navigate("/login");
         }
       } catch (error) {
-        console.error('Error fetching user data:', error);
-        if (error.response?.status === 401) {
-          localStorage.removeItem('token');
-          navigate('/login');
-        }
+        message.error("Error validating user session. Please log in again.");
+        localStorage.removeItem("token");
+        navigate("/login");
       }
     };
-
-
-
     const fetchMenus = async () => {
       try {
-        const response = await axios.get("https://demcalo.onrender.com/menus", {
-          headers: getAuthHeader()
-        });
-  
+        const response = await axios.get("https://demcalo.onrender.com/api/menus");
         if (response.data.success) {
           setMenus(response.data.data);
           setFilteredMenus(response.data.data);
         }
       } catch (error) {
-        console.error('Error fetching menus:', error);
-        setError(error.response?.data?.message || 'Failed to load menus');
+        message.error("Failed to load menus");
       } finally {
         setLoading(false);
       }
     };
-
-
-
     fetchUserData();
     fetchMenus();
   }, [navigate]);

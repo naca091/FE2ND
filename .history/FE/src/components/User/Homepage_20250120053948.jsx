@@ -79,7 +79,7 @@ const Homepage = () => {
 
     const fetchMenus = async () => {
       try {
-        const response = await axios.get("https://demcalo.onrender.com/menus", {
+        const response = await axios.get(`${API_URL}/menus`, {
           headers: getAuthHeader()
         });
   
@@ -94,9 +94,6 @@ const Homepage = () => {
         setLoading(false);
       }
     };
-
-
-
     fetchUserData();
     fetchMenus();
   }, [navigate]);

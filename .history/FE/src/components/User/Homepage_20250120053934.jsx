@@ -51,35 +51,37 @@ const Homepage = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        message.error("You are not logged in. Redirecting to login...");
+        navigate("/login");
+        return;
+      }
+
       try {
-        const response = await axios.get(`${API_URL}/auth/me`, {
-          headers: {
-            ...getAuthHeader(),
-            'Content-Type': 'application/json'
-          }
+        const response = await axios.get("https://demcalo.onrender.com/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+          'Content-Type': 'application/json'
         });
-  
         if (response.data.success) {
-          setUserData({
-            email: response.data.user.email,
-            xu: response.data.user.xu,
-            purchasedMenus: response.data.user.purchasedMenus?.map(menu => menu.menuId) || []
-          });
+          setUserEmail(response.data.user.email);
+          setUserXu(response.data.user.xu);
+          setPurchasedMenus(
+            response.data.user.purchasedMenus.map((menu) => menu.menuId)
+          );
+        } else {
+          message.error("Failed to fetch user data.");
+          navigate("/login");
         }
       } catch (error) {
-        console.error('Error fetching user data:', error);
-        if (error.response?.status === 401) {
-          localStorage.removeItem('token');
-          navigate('/login');
-        }
+        message.error("Error validating user session. Please log in again.");
+        localStorage.removeItem("token");
+        navigate("/login");
       }
     };
-
-
-
     const fetchMenus = async () => {
       try {
-        const response = await axios.get("https://demcalo.onrender.com/menus", {
+        const response = await axios.get(`${API_URL}/menus`, {
           headers: getAuthHeader()
         });
   
@@ -94,9 +96,6 @@ const Homepage = () => {
         setLoading(false);
       }
     };
-
-
-
     fetchUserData();
     fetchMenus();
   }, [navigate]);
