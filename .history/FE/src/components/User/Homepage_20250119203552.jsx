@@ -61,7 +61,6 @@ const Homepage = () => {
       try {
         const response = await axios.get("https://demcalo.onrender.com/api/auth/me", {
           headers: { Authorization: `Bearer ${token}` },
-          'Content-Type': 'application/json'
         });
         if (response.data.success) {
           setUserEmail(response.data.user.email);
